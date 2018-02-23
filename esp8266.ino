@@ -1,7 +1,7 @@
 #include <ESP8266WiFi.h>
 #include <AsyncMqttClient.h>
-#include <cmaxmedia.h>
 
+//MQTT Settings
 AsyncMqttClient mqttClient;
 #define MQTT_RELAY1_TOPIC     "CMAXMEDIA/SMS"
 #define MQTT_RELAY1_TOPIC_1   "CMAXMEDIA/SMS/RECEIVED"
@@ -14,13 +14,9 @@ void setup() {
 
   Serial.begin( 9600 );
   blinkit();
-
-  
   pinMode( LED_BUILTIN, OUTPUT );
 
-
-
-
+  //Setup WiFi
   WiFi.persistent(false);
   WiFi.mode(WIFI_STA);
   WiFi.begin(MySSID , MyPSK );
@@ -31,6 +27,7 @@ void setup() {
   blinkit();
   blinkit();
   
+  //Setup MQTT - Thnx to Spiess A.
   mqttClient.onConnect(onMqttConnect);
   mqttClient.onDisconnect(onMqttDisconnect);
   mqttClient.onMessage(onMqttMessage);
@@ -44,32 +41,19 @@ void setup() {
 
 }
 
-
-void blinkit() {
-  digitalWrite(LED_BUILTIN, LOW);   // turn the LED on (HIGH is the voltage level)
-  delay(1000);                       // wait for a second
-  digitalWrite(LED_BUILTIN, HIGH);    // turn the LED off by making the voltage LOW
-  delay(1000);                       // wait for a second
-}
-
-void blinkfast() {
-  digitalWrite(LED_BUILTIN, LOW);   // turn the LED on (HIGH is the voltage level)
-  delay(150);                       // wait for a second
-  digitalWrite(LED_BUILTIN, HIGH);    // turn the LED off by making the voltage LOW
-  delay(150);                       // wait for a second
-}
-
 void loop() {
 
   String serialData = readSerial();
   if( serialData!="" ) {
-
+    
+    //incoming SMS
     if( serialData.startsWith( "SMSReceived" ) ) {
 
       blinkfast();
       blinkfast();
       blinkfast();
 
+      //make payload
       String part1 = getValue( serialData, "_", 1 );
       String part2 = getValue( serialData, "_", 2 );
       String part3 = part1 + " von " + part2;
@@ -78,6 +62,7 @@ void loop() {
       char test[100];
       part3.toCharArray( test, 100 );
       
+      //publish payload over MQTT
       mqttClient.publish(MQTT_RELAY1_TOPIC_1, 1, false, test ); 
       
     }
@@ -101,12 +86,12 @@ void onMqttSubscribe(uint16_t packetId, uint8_t qos) {}
 void onMqttUnsubscribe(uint16_t packetId) {}
 
 void onMqttMessage(char* topic, char* payload, AsyncMqttClientMessageProperties properties, size_t len, size_t index, size_t total) {
+  //incoming topic
   if(strcmp( topic, MQTT_RELAY1_TOPIC )==0 )  {
-
-
      String writeString = "PrepareSMS_";
      writeString += payload;
      
+     //write data to MKR1400
      Serial.println( writeString );
      delay( 1000 );
      
@@ -117,6 +102,7 @@ void onMqttPublish(uint16_t packetId) {
 }
 
 
+//shared functions
 String getValue(String data, String separator, int index)
 {
     int found = 0;
@@ -135,7 +121,6 @@ String getValue(String data, String separator, int index)
 
 
 String readSerial() {
-
   char rc;
   String receivedString;
   
@@ -152,7 +137,6 @@ String readSerial() {
 
 
 String readSerial1() {
-
   char rc;
   String receivedString;
   
@@ -165,4 +149,18 @@ String readSerial1() {
   
   return receivedString;
     
+}
+
+void blinkit() {
+  digitalWrite(LED_BUILTIN, LOW);   // turn the LED on (HIGH is the voltage level)
+  delay(1000);                       // wait for a second
+  digitalWrite(LED_BUILTIN, HIGH);    // turn the LED off by making the voltage LOW
+  delay(1000);                       // wait for a second
+}
+
+void blinkfast() {
+  digitalWrite(LED_BUILTIN, LOW);   // turn the LED on (HIGH is the voltage level)
+  delay(150);                       // wait for a second
+  digitalWrite(LED_BUILTIN, HIGH);    // turn the LED off by making the voltage LOW
+  delay(150);                       // wait for a second
 }
