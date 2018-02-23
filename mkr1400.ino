@@ -1,12 +1,9 @@
-#include <cmaxmedia.h>
 #include <MKRGSM.h>
-#define PINNUMBER "0000"
-#define NUMBER "+436761234567"
+#define PINNUMBER "0000" //your GSM pin here
 
 GSM gsmAccess;     // include a 'true' parameter for debug enabled
 GSM_SMS sms;
 GSMVoiceCall vcs;
-
 
 boolean IsGSMConnected = false;
 
@@ -38,20 +35,6 @@ void setup(void)
   
 }
 
-void blinkit() {
-  digitalWrite(LED_BUILTIN, HIGH);   // turn the LED on (HIGH is the voltage level)
-  delay(1000);                       // wait for a second
-  digitalWrite(LED_BUILTIN, LOW);    // turn the LED off by making the voltage LOW
-  delay(1000);                       // wait for a second
-}
-
-void blinkfast() {
-  digitalWrite(LED_BUILTIN, HIGH);   // turn the LED on (HIGH is the voltage level)
-  delay(150);                       // wait for a second
-  digitalWrite(LED_BUILTIN, LOW);    // turn the LED off by making the voltage LOW
-  delay(150);                       // wait for a second
-}
-
 void loop(void) {
   char remoteNumber[20];  // Holds the emitting number
   String writeString = "";
@@ -60,21 +43,23 @@ void loop(void) {
   String serialData2 = readSerial1();
   if( serialData2!="" ) {
     Serial.println( "rcv Start" );
-    //Serial.println( serialData2 );
-  
       
     if( serialData2.startsWith( "PrepareSMS" ) ) {
-
       
+      //make valid sms text
       String sendData = serialData2;
       sendData.replace( "\r", "" );
       sendData.replace( "\n", "" );
 
 
+      //split parts coming from esp8266
       String part0 = getValue( sendData, "_", 0 ); //PrepareSMS
       String part1 = getValue( sendData, "_", 1 ); //Text
       String part2 = getValue( sendData, "_", 2 ); //Number
 
+      //first part is the identification which can be ignored here
+      //second part is the sms text
+      //third part is the number
       char smsNum[20];
       part2.toCharArray( smsNum, 20 );
 
@@ -111,7 +96,7 @@ void loop(void) {
   }
     
 
-  //sms event
+  //incoming sms
   if( sms.available() ) {
 
     blinkit();
@@ -124,7 +109,7 @@ void loop(void) {
     int c;
     String smsText;
     
-    
+    //get number and read sms text
     sms.remoteNumber(remoteNumber, 20);
 
     while((c=sms.read())!=-1 ) {
@@ -140,13 +125,16 @@ void loop(void) {
 
     Serial.println( "Reading SMS" );
     
+    //build string
     writeString = "SMSReceived_";
     writeString += smsText;
     writeString += "_";
     writeString += remoteNumber;
 
+    //send String back to ESP8266
     Serial1.println( writeString );
 
+    //delete sms
     sms.flush();
 
     Serial.println( "sms don" );
@@ -179,18 +167,16 @@ void loop(void) {
       Serial.print("Number:");
       Serial.println(remoteNumber);
       
-      // Answer the call, establish the call
-      //vcs.answerCall();         
+      //hang up an prepare info sms for mqtt
       vcs.hangCall();
 
-      //prepare for mqtt publish
-
+      //build payload
       writeString = "SMSReceived_";
       writeString += "Incoming Call";
       writeString += "_";
       writeString += remoteNumber;
   
-  
+      //send payload back to ESP8266
       Serial1.println( writeString );
   
       Serial.println( "call don" );
@@ -243,6 +229,7 @@ void ConnectGSM() {
    }
 }
 
+//shared functions
 String getValue(String data, String separator, int index)
 {
     int found = 0;
@@ -291,4 +278,18 @@ String readSerial1() {
   
   return receivedString;
     
+}
+
+void blinkit() {
+  digitalWrite(LED_BUILTIN, HIGH);   // turn the LED on (HIGH is the voltage level)
+  delay(1000);                       // wait for a second
+  digitalWrite(LED_BUILTIN, LOW);    // turn the LED off by making the voltage LOW
+  delay(1000);                       // wait for a second
+}
+
+void blinkfast() {
+  digitalWrite(LED_BUILTIN, HIGH);   // turn the LED on (HIGH is the voltage level)
+  delay(150);                       // wait for a second
+  digitalWrite(LED_BUILTIN, LOW);    // turn the LED off by making the voltage LOW
+  delay(150);                       // wait for a second
 }
