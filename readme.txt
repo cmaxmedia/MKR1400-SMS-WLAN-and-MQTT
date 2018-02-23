@@ -1,4 +1,4 @@
-Connect your Arduino MKR 1400 via UART/Serial with a NodeMCU ESP8266 over WiFi with an local MQTT Broker
+Connect your Arduino MKR 1400 via Serial RX/TX with a NodeMCU ESP8266 TX/RX over WiFi with an local MQTT Broker
 
 MQTT -> ESP8266 -> MKR1400
  |- MQTT: Send Topic "CMAXMEDIA/SMS" with Payload "PrepareSMS_This is a SMS_+436761234567"
