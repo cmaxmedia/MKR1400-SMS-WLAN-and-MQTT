@@ -75,7 +75,10 @@ void loop(void) {
         blinkfast();
 
         Serial.println( "Send" );
-        SendSMS( smsNum, part2 );
+
+        sms.beginSMS( smsNum );
+        sms.print( part1 );
+        sms.endSMS(); 
 
         delay( 1000 );
 
@@ -197,15 +200,6 @@ void loop(void) {
       Serial.println("HANG. Waiting Call.");      
       break;
   }
-}
-
-void SendSMS( char* smsNum, String tx ) {
-
-  sms.beginSMS( smsNum );
-  sms.print(tx);
-  sms.endSMS(); 
-
-
 }
 
 void ConnectGSM() {
